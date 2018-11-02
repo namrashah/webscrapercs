@@ -159,7 +159,7 @@ namespace WebScraperModularized.helpers{
         This method simply merges whatever data is passed to it into DB
         */
         public static void updateURLs(Queue<URL> myUrlQueue){
-            //String dbConfig = new MyConfigurationHelper().getDBConnectionConfig();
+            
             using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){
                 if(db!=null) db.BulkMerge(myUrlQueue);
             }
@@ -169,7 +169,7 @@ namespace WebScraperModularized.helpers{
         This method updates the status of url passed to it to DONE.
         */
         public static void markURLDone(URL url){
-            //String dbConfig = new MyConfigurationHelper().getDBConnectionConfig();
+            
             using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){
                 if(db!=null) db.Execute("update url set status = @status where id=@id", new {status = (int)URL.URLStatus.DONE, id = url.id});
             }
