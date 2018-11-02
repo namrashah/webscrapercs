@@ -322,9 +322,11 @@ namespace WebScraperModularized.parsers{
                             HtmlNode tdDistance = trNode.SelectSingleNode(".//td[3]");
                             if(tdDistance!=null) ntpi.distance = Util.parseDouble(tdDistance.InnerHtml.Trim().Split(" ")[0], 0);
                             
-                            HtmlNode transportationNameNode = trNode.SelectSingleNode(".//div[contains(@class, \"transportationName\")]/a");
+                            HtmlNode transportationNameNode = trNode.SelectSingleNode(".//div[contains(@class, \"transportationName\")]");
                             if(transportationNameNode!=null){
-                                ntpi.name = transportationNameNode.InnerHtml.Trim();
+                                HtmlNode transportationNameNodeA = transportationNameNode.SelectSingleNode(".//a");
+                                if(transportationNameNodeA!=null) ntpi.name = transportationNameNodeA.InnerHtml.Trim();
+                                else ntpi.name = transportationNameNode.InnerHtml.Trim();
                             }
 
                             nTPIs.Add(ntpi);
