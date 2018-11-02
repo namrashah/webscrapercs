@@ -136,25 +136,15 @@ namespace WebScraperModularized.helpers{
             if(amenityTypeList==null) return;
             if(amenityTypeList!=null && amenityTypeList.Count>0)
             {
-                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
-                {//get connection
-                    bool isExists = false;
-                    foreach(var type in amenityTypeList)
-                    {
-                        string title = type.title;
-                        isExists = db.ExecuteScalar<bool>("select count(1) from amenitytype where title=@title", new {title});
-                        if(!isExists)
-                        {
-                            db.BulkMerge(type) 
-                                    .ThenForEach(x => x.amenityList
-                                        .ForEach(y => y.amenitytype = x.id))
-                                    .ThenBulkMerge(x => x.amenityList);
-                        }
-                    }
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)) {//get connection
+                    db.BulkMerge(amenityTypeList) 
+                        .ThenForEach(x => x.amenityList
+                                .ForEach(y => y.amenitytype = x.id))
+                        .ThenBulkMerge(x => x.amenityList);
                 }
             }
         }
-
+           
         /*
         This method simply merges whatever data is passed to it into DB
         */
