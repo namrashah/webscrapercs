@@ -19,6 +19,14 @@ namespace WebScraperModularized
             DapperPlusManager.Entity<URL>().Table("url").Identity(x => x.id);
             DapperPlusManager.Entity<Property>().Table("property").Identity(x => x.id);
             DapperPlusManager.Entity<PropertyType>().Table("propertytype").Identity(x => x.id);
+            DapperPlusManager.Entity<School>().Table("school").Identity(x => x.id);
+            DapperPlusManager.Entity<Review>().Table("review").Identity(x => x.id);
+            DapperPlusManager.Entity<NTPI>().Table("ntpi").Identity(x => x.id);
+            DapperPlusManager.Entity<Expenses>().Table("expenses").Identity(x => x.id);
+            DapperPlusManager.Entity<Expensetype>().Table("expensetype").Identity(x => x.id);
+            DapperPlusManager.Entity<Apartments>().Table("apartments").Identity(x => x.id);
+            DapperPlusManager.Entity<Amenity>().Table("amenity").Identity(x => x.id);
+            DapperPlusManager.Entity<Amenitytype>().Table("amenitytype").Identity(x => x.id);
 
             URL myUrl;//URL to be parsed
 
