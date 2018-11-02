@@ -125,7 +125,8 @@ namespace WebScraperModularized.parsers{
                             Amenity amenity = new Amenity();
 
                             //get title
-                            amenity.title = liNode.InnerHtml;
+                            if(liNode.ChildNodes.Count>1) amenity.title = liNode.ChildNodes[1].InnerHtml.Trim();
+                            else amenity.title = liNode.InnerText.Trim();
 
                             //set property
                             amenity.property = myUrl.property;
