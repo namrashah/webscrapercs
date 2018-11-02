@@ -13,13 +13,14 @@ using WebScraperModularized.wrappers;
 namespace WebScraperModularized.helpers{
     public class DBHelper
     { 
+        public static String dbConfig = new MyConfigurationHelper().getDBConnectionConfig();
         /*
         Method to return n URLs from DB.
         */
         public static IEnumerable<URL> getURLSFromDB(int n, bool initialLoad){
             IEnumerable<URL> myUrlEnumerable = null;
 
-            String dbConfig = new MyConfigurationHelper().getDBConnectionConfig();
+            
 
             using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){//get connection
                 if(db!=null){
@@ -60,12 +61,105 @@ namespace WebScraperModularized.helpers{
             }
         }
 
+        //insert schools in db
+
+        public static void insertParsedApartment(ApartmentData apartmentData)
+        {
+                insertParsedSchools(apartmentData.schoolsList);
+                insertParsedReviews(apartmentData.reviewsList);
+                insertParsedNTPI(apartmentData.NTPIList);
+                insertParsedExpenseType(apartmentData.expensesTypeList);
+                insertParsedApartmentList(apartmentData.apartmentsList);
+                insertParsedPropertyAmenities(apartmentData.amenityTypesList);
+                
+        }
+
+    
+        public static void insertParsedApartmentList(List<Apartments> apartments){
+            if(apartments==null) return;
+            if(apartments!=null && apartments.Count>0){
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
+                {//get connection
+                    db.BulkMerge(apartments);
+                      
+                }
+            }
+        }
+
+        public static void insertParsedSchools(List<School> schoolsList){
+            if(schoolsList==null) return;
+            if(schoolsList!=null && schoolsList.Count>0){
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
+                {//get connection
+                    db.BulkMerge(schoolsList);
+                      
+                }
+            }
+        }
+        public static void insertParsedNTPI(List<NTPI> NtpiList){
+            if(NtpiList==null) return;
+            if(NtpiList!=null && NtpiList.Count>0){
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
+                {//get connection
+                    db.BulkMerge(NtpiList);
+                      
+                }
+            }
+        }
+
+        //insert reviews in db
+        public static void insertParsedReviews(List<Review> reviewsList){
+            if(reviewsList==null) return;
+            if(reviewsList!=null && reviewsList.Count>0)
+            {
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){//get connection
+                    db.BulkMerge(reviewsList); 
+                }
+            }
+        }
+
+        public static void insertParsedExpenseType(List<Expensetype> expensesTypeList){
+            if(expensesTypeList==null) return;
+            if(expensesTypeList!=null && expensesTypeList.Count>0)
+            {
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){//get connection
+                   db.BulkMerge(expensesTypeList)//insert the list of property types
+                        .ThenForEach(x => x.expensesList
+                                            .ForEach(y => y.expensetype = x.id))//set property type id for properties
+                        .ThenBulkMerge(x => x.expensesList);
+                }
+            }
+        }
+        
+        public static void insertParsedPropertyAmenities(List<Amenitytype> amenityTypeList)
+        {  
+            if(amenityTypeList==null) return;
+            if(amenityTypeList!=null && amenityTypeList.Count>0)
+            {
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
+                {//get connection
+                    bool isExists = false;
+                    foreach(var type in amenityTypeList)
+                    {
+                        string title = type.title;
+                        isExists = db.ExecuteScalar<bool>("select count(1) from amenitytype where title=@title", new {title});
+                        if(!isExists)
+                        {
+                            db.BulkMerge(type) 
+                                    .ThenForEach(x => x.amenityList
+                                        .ForEach(y => y.amenitytype = x.id))
+                                    .ThenBulkMerge(x => x.amenityList);
+                        }
+                    }
+                }
+            }
+        }
 
         /*
         This method simply merges whatever data is passed to it into DB
         */
         public static void updateURLs(Queue<URL> myUrlQueue){
-            String dbConfig = new MyConfigurationHelper().getDBConnectionConfig();
+            //String dbConfig = new MyConfigurationHelper().getDBConnectionConfig();
             using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){
                 if(db!=null) db.BulkMerge(myUrlQueue);
             }
@@ -75,15 +169,10 @@ namespace WebScraperModularized.helpers{
         This method updates the status of url passed to it to DONE.
         */
         public static void markURLDone(URL url){
-            String dbConfig = new MyConfigurationHelper().getDBConnectionConfig();
+            //String dbConfig = new MyConfigurationHelper().getDBConnectionConfig();
             using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){
                 if(db!=null) db.Execute("update url set status = @status where id=@id", new {status = (int)URL.URLStatus.DONE, id = url.id});
             }
         }
-
-        public static void insertParsedApartment(ApartmentData apartmentData){
-            //TODO
-        }
-
-    }
+     }
 }
