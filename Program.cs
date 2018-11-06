@@ -29,25 +29,19 @@ namespace WebScraperModularized
             DapperPlusManager.Entity<Amenity>().Table("amenity").Identity(x => x.id);
             DapperPlusManager.Entity<Amenitytype>().Table("amenitytype").Identity(x => x.id);
 
-            Thread[] threadList = new Thread[10];
+            Thread[] threadList = new Thread[100]; // 1 url per thread
 
-            for(int i = 0; i < threadList.Length; i++)
+            while(URLHelper.getNextURL() != null) // goes till no more urls left
             {
-                threadList[i] = new Thread(ParseUrl); //Need Url List?
-                threadList[i].Name = $"Thread{i+1}";
-                threadList[i].Start();
-            }
-
                 for(int i = 0; i < threadList.Length; i++)
                 {
-                    if(threadList[i].ThreadState != ThreadState.Running)
-                    {
-                        //threadList[i].Abort(); // will it throw an exception? Not supported on Core?
-                        threadList[i] = new Thread(ParseUrl);
-                        threadList[i].Name = $"Thread{i+1}";
-                        threadList[i].Start();
-                    }
+                    threadList[i] = new Thread(ParseUrl); //Need Url List?
+                    threadList[i].Name = $"Thread{i+1}";
+                    threadList[i].Start();
                 }
+
+                threadList[threadList.Length-1].Join(); // waits until all threads in batch are done.
+            }
 
             //ParseUrl(); // without any lock
         }
@@ -57,7 +51,7 @@ namespace WebScraperModularized
             URL myUrl;//URL to be parsed
 
             //get url from url helper and do basic null checks
-            while((myUrl = URLHelper.getNextURL())!=null && myUrl.url!=null && myUrl.url.Length>0){
+            if((myUrl = URLHelper.getNextURL())!=null && myUrl.url!=null && myUrl.url.Length>0){
                 Console.WriteLine("Parsing URL {0}", myUrl.url);//print the current url
                 try{
                     var response = client.GetAsync(myUrl.url).Result;//make an HTTP call and get the html for this URL
