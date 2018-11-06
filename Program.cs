@@ -6,6 +6,7 @@ using WebScraperModularized.data;
 using System.Collections.Generic;
 using Z.Dapper.Plus;
 using WebScraperModularized.wrappers;
+using System.Threading;
 
 namespace WebScraperModularized
 {
@@ -28,6 +29,31 @@ namespace WebScraperModularized
             DapperPlusManager.Entity<Amenity>().Table("amenity").Identity(x => x.id);
             DapperPlusManager.Entity<Amenitytype>().Table("amenitytype").Identity(x => x.id);
 
+            Thread[] threadList = new Thread[10];
+
+            for(int i = 0; i < threadList.Length; i++)
+            {
+                threadList[i] = new Thread(ParseUrl); //Need Url List?
+                threadList[i].Name = $"Thread{i+1}";
+                threadList[i].Start();
+            }
+
+                for(int i = 0; i < threadList.Length; i++)
+                {
+                    if(threadList[i].ThreadState != ThreadState.Running)
+                    {
+                        //threadList[i].Abort(); // will it throw an exception? Not supported on Core?
+                        threadList[i] = new Thread(ParseUrl);
+                        threadList[i].Name = $"Thread{i+1}";
+                        threadList[i].Start();
+                    }
+                }
+
+            //ParseUrl(); // without any lock
+        }
+
+        static void ParseUrl()
+        {
             URL myUrl;//URL to be parsed
 
             //get url from url helper and do basic null checks
