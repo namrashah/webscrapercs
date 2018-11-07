@@ -40,7 +40,7 @@ namespace WebScraperModularized
             }
             
             // Loop forever if Thread ends then make new one
-            while(threadList.Length != 0)
+            while(URLHelper.hasNextURL() == false)
             {
                 for(int i = 0; i < threadList.Length; i++)
                 {
@@ -49,10 +49,6 @@ namespace WebScraperModularized
                         threadList[i] = new Thread(ParseUrl); 
                         threadList[i].Start();                        
                     }
-                }
-                if(URLHelper.hasNextURL() == false)
-                {
-                    break;
                 }
             }
         }
