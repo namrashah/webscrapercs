@@ -1,98 +1,69 @@
-﻿using System;
-using WebScraperModularized.helpers;
-using System.Net.Http;
-using WebScraperModularized.parsers;
-using WebScraperModularized.data;
+/*
+This class will act as the URL manager.
+It will get k urls from database and keep them in memory.
+
+We need to make sure that the getNextURL code is thread safe.
+If two threads call the getNextURL method at the same time,
+it can lead to unexpected results!
+*/
+using System;
 using System.Collections.Generic;
-using Z.Dapper.Plus;
-using WebScraperModularized.wrappers;
-using System.Threading;
+using System.Data;
+using Dapper;
+using WebScraperModularized.data;
+using System.Linq;
 
-namespace WebScraperModularized
-{
-    class Program
-    {
-        private static readonly HttpClient client = new HttpClient();
+namespace WebScraperModularized.helpers{
 
-        static void Main(string[] args)
-        {   
-           //do dapper entitiy mapping to map objects to DB tables
-            DapperPlusManager.Entity<URL>().Table("url").Identity(x => x.id);
-            DapperPlusManager.Entity<Property>().Table("property").Identity(x => x.id);
-            DapperPlusManager.Entity<PropertyType>().Table("propertytype").Identity(x => x.id);
-            DapperPlusManager.Entity<School>().Table("school").Identity(x => x.id);
-            DapperPlusManager.Entity<Review>().Table("review").Identity(x => x.id);
-            DapperPlusManager.Entity<NTPI>().Table("ntpi").Identity(x => x.id);
-            DapperPlusManager.Entity<Expenses>().Table("expenses").Identity(x => x.id);
-            DapperPlusManager.Entity<Expensetype>().Table("expensetype").Identity(x => x.id);
-            DapperPlusManager.Entity<Apartments>().Table("apartments").Identity(x => x.id);
-            DapperPlusManager.Entity<Amenity>().Table("amenity").Identity(x => x.id);
-            DapperPlusManager.Entity<Amenitytype>().Table("amenitytype").Identity(x => x.id);
+    public static class URLHelper {
 
-            Thread[] threadList = new Thread[100]; // 1 url per thread
+        private static readonly object nextURLLock = new object();//simple lock object
+        private static int k = 100;//number of URLs to cache
+        private static Queue<URL> myURLQueue = new Queue<URL>();//queue to be used as cache
 
-            while(URLHelper.getNextURL() != null) // goes till no more urls left
-            {
-                for(int i = 0; i < threadList.Length; i++)
-                {
-                    threadList[i] = new Thread(ParseUrl); //Need Url List?
-                    threadList[i].Name = $"Thread{i+1}";
-                    threadList[i].Start();
+        private static bool INITIALIZED = false;//variable to tell if this is the first load or not
+
+        /*
+        This method returns the next url in the queue to be parsed.
+        Returns null if not URLs are left to be parsed.
+        */
+        public static URL getNextURL(){
+            lock(nextURLLock){//make sure that this part of the code is thread safe.
+                if(myURLQueue.Count==0){//check if queue contains any URLs
+                    int loadedURLCount = loadNextURLS(!INITIALIZED);//load new URLs from DB
+                    INITIALIZED = true;
+                    if(loadedURLCount==0) return null;
                 }
-
-                threadList[threadList.Length-1].Join(); // waits until all threads in batch are done.
-            }
-
-            //ParseUrl(); // without any lock
-        }
-
-        static void ParseUrl()
-        {
-            URL myUrl;//URL to be parsed
-
-            //get url from url helper and do basic null checks
-            if((myUrl = URLHelper.getNextURL())!=null && myUrl.url!=null && myUrl.url.Length>0){
-                Console.WriteLine("Parsing URL {0}", myUrl.url);//print the current url
-                try{
-                    var response = client.GetAsync(myUrl.url).Result;//make an HTTP call and get the html for this URL
-
-                    string content = response.Content.ReadAsStringAsync().Result;//save HTML into string
-
-                    if(myUrl.urltype == (int)URL.URLType.PROPERTY_URL){
-
-                        //if the url is of property type, instantiate property parser
-                        PropertyParser parser = new PropertyParser(content, myUrl);
-                        
-                        //parse the html
-                        PropertyData propData = parser.parse();
-                        
-                        //insert into DB
-                        DBHelper.insertParsedProperties(propData);
-
-                        Console.WriteLine("Stored {0} properties", 
-                            (propData!=null && propData.urlList!=null)?propData.urlList.Count:0);
-                    }
-                    else if(myUrl.urltype == (int)URL.URLType.APARTMENT_URL){
-                        
-                        //if the url is of apartment type, instantiate apartment parser
-                        ApartmentParser parser = new ApartmentParser(content, myUrl);
-
-                        //call the parse method
-                        ApartmentData apartmentData = parser.parse();
-
-                        DBHelper.insertParsedApartment(apartmentData);
-
-                        Console.WriteLine("Stored data for property id {0}!", myUrl.property);
-                    }
-                    else{
-                        Console.WriteLine("Unknown URL Type");
-                    }
-                    DBHelper.markURLDone(myUrl);//update the status of URL as done in DB
-                }
-                catch(Exception e){
-                    ExceptionHelper.printException(e);
-                }
+                
+                return myURLQueue.Dequeue();//dequeue one URL from Queue and return
             }
         }
+        public static bool hasNextURL(){
+            lock(nextURLLock){//make sure that this part of the code is thread safe.
+                if(myURLQueue.Count==0){//check if queue contains any URLs
+                    return false;
+                }                
+                return true;
+            }
+        }
+
+        /*
+        This method gets the next k URLs from DB and returns the count of URLs loaded.
+        */
+        private static int loadNextURLS(bool initialLoad){
+            IEnumerable<URL> myUrlEnumerable = DBHelper.getURLSFromDB(k, initialLoad);//load URLs from DB
+
+            if(myUrlEnumerable!=null && myUrlEnumerable.Count()>0){
+                foreach(URL url in myUrlEnumerable){
+                    url.status = (int)URL.URLStatus.RUNNING;
+                    myURLQueue.Enqueue(url);//add url to queue
+                }
+                if(myURLQueue.Count>0) DBHelper.updateURLs(myURLQueue);//update status to running in DB
+                return myURLQueue.Count();//return the count of number of URLs loaded
+            }
+
+            return 0;
+        }
+
     }
 }
