@@ -1,69 +1,168 @@
 /*
-This class will act as the URL manager.
-It will get k urls from database and keep them in memory.
-
-We need to make sure that the getNextURL code is thread safe.
-If two threads call the getNextURL method at the same time,
-it can lead to unexpected results!
+This class will help us in reading/writing data from/to the Database.
 */
-using System;
+
 using System.Collections.Generic;
-using System.Data;
-using Dapper;
 using WebScraperModularized.data;
-using System.Linq;
+using Dapper;
+using Z.Dapper.Plus;
+using System.Data;
+using System;
+using WebScraperModularized.wrappers;
 
 namespace WebScraperModularized.helpers{
+    public class DBHelper
+    { 
+        public static String dbConfig = new MyConfigurationHelper().getDBConnectionConfig();
+        /*
+        Method to return n URLs from DB.
+        */
+        public static IEnumerable<URL> getURLSFromDB(int n, bool initialLoad){
+            IEnumerable<URL> myUrlEnumerable = null;
 
-    public static class URLHelper {
+            
 
-        private static readonly object nextURLLock = new object();//simple lock object
-        private static int k = 100;//number of URLs to cache
-        private static Queue<URL> myURLQueue = new Queue<URL>();//queue to be used as cache
-
-        private static bool INITIALIZED = false;//variable to tell if this is the first load or not
+            using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){//get connection
+                if(db!=null){
+                    if(!initialLoad){
+                        //if not initial load, we need to get new urls in status INITIAL
+                        myUrlEnumerable = 
+                                    db.Query<URL>("Select Id, Url, Urltype, Property from URL where status = @status limit @k",
+                                    new {status = URL.URLStatus.INITIAL, k = n});
+                    }
+                    else {
+                        //if initial load, we need to get URLs in RUNNING status as well as they were not parseds last time
+                        myUrlEnumerable = 
+                                db.Query<URL>("Select Id, Url, Urltype, Property from URL where status = ANY(@status) limit @k",
+                                new {status = new []{(int)URL.URLStatus.INITIAL, (int)URL.URLStatus.RUNNING}, k = n});
+                    }
+                }
+            }
+            return myUrlEnumerable;
+        }
 
         /*
-        This method returns the next url in the queue to be parsed.
-        Returns null if not URLs are left to be parsed.
+        Method to insert parsed properties into DB
         */
-        public static URL getNextURL(){
-            lock(nextURLLock){//make sure that this part of the code is thread safe.
-                if(myURLQueue.Count==0){//check if queue contains any URLs
-                    int loadedURLCount = loadNextURLS(!INITIALIZED);//load new URLs from DB
-                    INITIALIZED = true;
-                    if(loadedURLCount==0) return null;
+        public static void insertParsedProperties(PropertyData propData){
+            
+            if(propData==null) return;
+            List<PropertyType> propertyTypeList = propData.urlList;
+            if(propertyTypeList!=null && propertyTypeList.Count>0){
+                String dbConfig = new MyConfigurationHelper().getDBConnectionConfig();
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){//get connection
+                    db.BulkMerge(propertyTypeList)//insert the list of property types
+                        .ThenForEach(x => x.properties
+                                            .ForEach(y => y.propertytype = x.id))//set property type id for properties
+                        .ThenBulkMerge(x => x.properties)//insert properties
+                        .ThenForEach(x => x.url.property = x.id)//set property id for urls
+                        .ThenBulkMerge(x => x.url);//insert urls
                 }
+            }
+        }
+
+        //insert schools in db
+
+        public static void insertParsedApartment(ApartmentData apartmentData)
+        {
+                insertParsedSchools(apartmentData.schoolsList);
+                insertParsedReviews(apartmentData.reviewsList);
+                insertParsedNTPI(apartmentData.NTPIList);
+                insertParsedExpenseType(apartmentData.expensesTypeList);
+                insertParsedApartmentList(apartmentData.apartmentsList);
+                insertParsedPropertyAmenities(apartmentData.amenityTypesList);
                 
-                return myURLQueue.Dequeue();//dequeue one URL from Queue and return
+        }
+
+    
+        public static void insertParsedApartmentList(List<Apartments> apartments){
+            if(apartments==null) return;
+            if(apartments!=null && apartments.Count>0){
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
+                {//get connection
+                    db.BulkMerge(apartments);
+                      
+                }
             }
         }
-        public static bool hasNextURL(){
-            lock(nextURLLock){//make sure that this part of the code is thread safe.
-                if(myURLQueue.Count==0){//check if queue contains any URLs
-                    return false;
-                }                
-                return true;
+
+        public static void insertParsedSchools(List<School> schoolsList){
+            if(schoolsList==null) return;
+            if(schoolsList!=null && schoolsList.Count>0){
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
+                {//get connection
+                    db.BulkMerge(schoolsList);
+                      
+                }
+            }
+        }
+        public static void insertParsedNTPI(List<NTPI> NtpiList){
+            if(NtpiList==null) return;
+            if(NtpiList!=null && NtpiList.Count>0){
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
+                {//get connection
+                    db.BulkMerge(NtpiList);
+                      
+                }
+            }
+        }
+
+        //insert reviews in db
+        public static void insertParsedReviews(List<Review> reviewsList){
+            if(reviewsList==null) return;
+            if(reviewsList!=null && reviewsList.Count>0)
+            {
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){//get connection
+                    db.BulkMerge(reviewsList); 
+                }
+            }
+        }
+
+        public static void insertParsedExpenseType(List<Expensetype> expensesTypeList){
+            if(expensesTypeList==null) return;
+            if(expensesTypeList!=null && expensesTypeList.Count>0)
+            {
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){//get connection
+                   db.BulkMerge(expensesTypeList)//insert the list of property types
+                        .ThenForEach(x => x.expensesList
+                                            .ForEach(y => y.expensetype = x.id))//set property type id for properties
+                        .ThenBulkMerge(x => x.expensesList);
+                }
+            }
+        }
+        
+        public static void insertParsedPropertyAmenities(List<Amenitytype> amenityTypeList)
+        {  
+            if(amenityTypeList==null) return;
+            if(amenityTypeList!=null && amenityTypeList.Count>0)
+            {
+                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)) {//get connection
+                    db.BulkMerge(amenityTypeList) 
+                        .ThenForEach(x => x.amenityList
+                                .ForEach(y => y.amenitytype = x.id))
+                        .ThenBulkMerge(x => x.amenityList);
+                }
+            }
+        }
+           
+        /*
+        This method simply merges whatever data is passed to it into DB
+        */
+        public static void updateURLs(Queue<URL> myUrlQueue){
+            
+            using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){
+                if(db!=null) db.BulkMerge(myUrlQueue);
             }
         }
 
         /*
-        This method gets the next k URLs from DB and returns the count of URLs loaded.
+        This method updates the status of url passed to it to DONE.
         */
-        private static int loadNextURLS(bool initialLoad){
-            IEnumerable<URL> myUrlEnumerable = DBHelper.getURLSFromDB(k, initialLoad);//load URLs from DB
-
-            if(myUrlEnumerable!=null && myUrlEnumerable.Count()>0){
-                foreach(URL url in myUrlEnumerable){
-                    url.status = (int)URL.URLStatus.RUNNING;
-                    myURLQueue.Enqueue(url);//add url to queue
-                }
-                if(myURLQueue.Count>0) DBHelper.updateURLs(myURLQueue);//update status to running in DB
-                return myURLQueue.Count();//return the count of number of URLs loaded
+        public static void markURLDone(URL url){
+            
+            using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){
+                if(db!=null) db.Execute("update url set status = @status where id=@id", new {status = (int)URL.URLStatus.DONE, id = url.id});
             }
-
-            return 0;
         }
-
-    }
+     }
 }
