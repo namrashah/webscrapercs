@@ -33,9 +33,16 @@ namespace WebScraperModularized.helpers{
                     int loadedURLCount = loadNextURLS(!INITIALIZED);//load new URLs from DB
                     INITIALIZED = true;
                     if(loadedURLCount==0) return null;
-                }
-                
+                }                
                 return myURLQueue.Dequeue();//dequeue one URL from Queue and return
+            }
+        }
+        public static bool hasNextURL(){
+            lock(nextURLLock){//make sure that this part of the code is thread safe.
+                if(myURLQueue.Count==0){//check if queue contains any URLs
+                    return false;
+                }                
+                return true;
             }
         }
 
