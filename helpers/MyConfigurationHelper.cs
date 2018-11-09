@@ -11,6 +11,13 @@ namespace WebScraperModularized.helpers{
     {
 
         private static String DATABASE_CONNECTION_CONFIG = "DatabaseConnection";
+
+        private static String SERVICE_BUS_CONNECTION_CONFIG = "ServiceBusConnectionString";
+        
+        public String getServiceBusConnectionString()
+        {
+            return ConfigurationManager.AppSettings.GetValues(SERVICE_BUS_CONNECTION_CONFIG)[0];
+        }
         
         public String getDBConnectionConfig()
         {

@@ -34,7 +34,7 @@ namespace WebScraperModularized.helpers
             else
             {
                 MyConfigurationHelper myConfigurationManager = new MyConfigurationHelper();
-                return new SqlConnection(myConfigurationManager.getDBConnectionString());
+                return new NpgsqlConnection(myConfigurationManager.getDBConnectionString());
             }
         }
     }

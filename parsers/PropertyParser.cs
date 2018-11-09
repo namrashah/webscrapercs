@@ -42,13 +42,7 @@ namespace WebScraperModularized.parsers{
                                     property.url = new URL();
                                     HtmlNode paginationDiv = row.SelectSingleNode(".//div[@id=\"paging\"]");
                                     if(paginationDiv!=null){
-                                        string url = getNextUrl(row);
-                                        if(Util.isUrlValid(url)){
-                                            property.url.url = url;
-                                            property.url.urltype = (int)URL.URLType.PROPERTY_URL;
-                                            property.url.status = (int)URL.URLStatus.INITIAL;
-                                        }
-                                        else continue;
+                                        continue;
                                     }
                                     else{
                                         property = getProperty(row);

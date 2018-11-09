@@ -46,10 +46,18 @@
       <e p="parsers" t="Include">
         <e p="ApartmentParser.cs" t="Include" />
         <e p="PropertyParser.cs" t="Include" />
+        <e p="ZipcodePropertyUrlParser.cs" t="Include" />
       </e>
       <e p="Program.cs" t="Include" />
       <e p="README.md" t="Include" />
       <e p="Sample.config" t="Include" />
+      <e p="service" t="Include">
+        <e p="ApartmentService.cs" t="Include" />
+        <e p="AzureServiceBusService.cs" t="Include" />
+        <e p="IQueueService.cs" t="Include" />
+        <e p="PropertyService.cs" t="Include" />
+        <e p="ZipcodeService.cs" t="Include" />
+      </e>
       <e p="webscrapercs.backup" t="Include" />
       <e p="WebScraperModularized.csproj" t="IncludeRecursive" />
       <e p="wrappers" t="Include">
