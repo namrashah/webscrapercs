@@ -4,6 +4,7 @@ This class will be used as a helper for DB connections.
 
 using System;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json.Linq;
@@ -33,7 +34,7 @@ namespace WebScraperModularized.helpers
             else
             {
                 MyConfigurationHelper myConfigurationManager = new MyConfigurationHelper();
-                return new NpgsqlConnection(myConfigurationManager.getDBConnectionString());
+                return new SqlConnection(myConfigurationManager.getDBConnectionString());
             }
         }
     }
