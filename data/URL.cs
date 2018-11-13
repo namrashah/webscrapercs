@@ -27,5 +27,7 @@ namespace WebScraperModularized.data{
         public int property {get; set;}
 
         public string error {get; set;}
+
+        public int zipcode {get; set;}
     }
 }

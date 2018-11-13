@@ -13,7 +13,7 @@ namespace WebScraperModularized.wrappers{
 
         public List<Amenitytype> amenityTypesList;
 
-        public List<NTPI> NTPIList;
+        public List<NTPICategory> NTPIList;
 
         public List<Review> reviewsList;
 
