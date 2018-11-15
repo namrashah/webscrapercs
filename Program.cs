@@ -17,16 +17,22 @@ namespace WebScraperModularized
         {   
            //do dapper entitiy mapping to map objects to DB tables
             DapperPlusManager.Entity<URL>().Table("url").Identity(x => x.id);
-            DapperPlusManager.Entity<Property>().Table("property").Identity(x => x.id);
-            DapperPlusManager.Entity<PropertyType>().Table("propertytype").Identity(x => x.id);
-            DapperPlusManager.Entity<School>().Table("school").Identity(x => x.id);
+            DapperPlusManager.Entity<Property>().Table("PROPERTY_MAIN").Identity(x => x.id);
+            DapperPlusManager.Entity<PropertyType>().Table("PROPERTY_TYPE").Identity(x => x.id);
+            DapperPlusManager.Entity<School>().Table("School").Identity(x => x.id);
             DapperPlusManager.Entity<Review>().Table("review").Identity(x => x.id);
-            DapperPlusManager.Entity<NTPI>().Table("ntpi").Identity(x => x.id);
-            DapperPlusManager.Entity<Expenses>().Table("expenses").Identity(x => x.id);
+            DapperPlusManager.Entity<NTPI>().Table("NearestTransitPointInterest").Identity(x => x.id);
+            DapperPlusManager.Entity<Expenses>().Table("Expenses").Identity(x => x.id);
             DapperPlusManager.Entity<Expensetype>().Table("expensetype").Identity(x => x.id);
-            DapperPlusManager.Entity<Apartments>().Table("apartments").Identity(x => x.id);
-            DapperPlusManager.Entity<Amenity>().Table("amenity").Identity(x => x.id);
-            DapperPlusManager.Entity<Amenitytype>().Table("amenitytype").Identity(x => x.id);
+            DapperPlusManager.Entity<Apartments>().Table("TYPE_SPECIFIC").Identity(x => x.id);
+            DapperPlusManager.Entity<Amenity>().Table("AMENITIES").Identity(x => x.id);
+            DapperPlusManager.Entity<Amenitytype>().Table("AMENITY_TYPE").Identity(x => x.id);
+            DapperPlusManager.Entity<PropertyAmenityMapping>().Table("PROPERTY_AMENITY_MAP").Identity(x => x.Id);
+            DapperPlusManager.Entity<PropertySchoolMapping>().Table("Property_school").Identity(x => x.Id);
+            DapperPlusManager.Entity<NTPICategory>().Table("NearestTransitPoint_Category").Identity(x => x.Id);
+            DapperPlusManager.Entity<PropertyNTPIMapping>().Table("NTPI_Property").Identity(x => x.Id);
+
+
 
             URL myUrl;//URL to be parsed
 
