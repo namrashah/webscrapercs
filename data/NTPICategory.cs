@@ -8,7 +8,7 @@ namespace WebScraperModularized.data
     {
         public int Id { get; set; }
 
-        public string Title { get; set; }
+        public string Name { get; set; }
 
         public List<NTPI> NtpiList { get; set; }
     }

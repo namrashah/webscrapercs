@@ -14,6 +14,8 @@ namespace WebScraperModularized.data{
         public int amenitytype {get; set;}
 
         public int property {get; set;}
+
+        public List<PropertyAmenityMapping> PropAmenityMapping;
         
     }
 }
