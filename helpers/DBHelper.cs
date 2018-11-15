@@ -78,11 +78,7 @@ namespace WebScraperModularized.helpers{
         public static void insertParsedApartmentList(List<Apartments> apartments){
             if(apartments==null) return;
             if(apartments!=null && apartments.Count>0){
-                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
-                {//get connection
-                    db.BulkMerge(apartments);
-                      
-                }
+                BulkMergeUtil(apartments);
             }
         }
 
@@ -91,18 +87,25 @@ namespace WebScraperModularized.helpers{
             if(schoolsList!=null && schoolsList.Count>0){
                 using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
                 {//get connection
-                    db.BulkMerge(schoolsList);
-                      
+                    db.BulkMerge(schoolsList)
+                        .ThenForEach(x => x.PropSchoolMapping)
+                            .ForEach(y => y.SchoolId == x.id)
+                        .ThenBulkMerge(x => x.PropSchoolMapping);
                 }
             }
         }
-        public static void insertParsedNTPI(List<NTPI> NtpiList){
-            if(NtpiList==null) return;
-            if(NtpiList!=null && NtpiList.Count>0){
+        public static void insertParsedNTPI(List<NTPI> NtpiCategoryList){
+            if(NtpiCategoryList==null) return;
+            if(NtpiCategoryList!=null && NtpiCategoryList.Count>0){
                 using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig))
                 {//get connection
-                    db.BulkMerge(NtpiList);
-                      
+                    db.BulkMerge(NtpiCategoryList)
+                        .ThenForEach(x => x.NtpiList)
+                            .ForEach(y => y.category == x.id)
+                            .ThenForEach(y => y.PropNTPIMapping)
+                                .ForEach(z => z.NtpiId == y.id)
+                        .ThenBulkMerge(x => x.NtpiList)
+                        .ThenBulkMerge(y => y.PropNTPIMapping);
                 }
             }
         }
@@ -112,9 +115,7 @@ namespace WebScraperModularized.helpers{
             if(reviewsList==null) return;
             if(reviewsList!=null && reviewsList.Count>0)
             {
-                using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){//get connection
-                    db.BulkMerge(reviewsList); 
-                }
+                BulkMergeUtil(reviewsList);
             }
         }
 
@@ -140,11 +141,21 @@ namespace WebScraperModularized.helpers{
                     db.BulkMerge(amenityTypeList) 
                         .ThenForEach(x => x.amenityList
                                 .ForEach(y => y.amenitytype = x.id))
-                        .ThenBulkMerge(x => x.amenityList);
+                                .ThenForEach(y => y.PropAmenityMapping)
+                                    .ForEach(z => z.Amenity == y.id)
+                        .ThenBulkMerge(x => x.amenityList)
+                        .ThenBulkMerge(y => y.PropAmenityMapping);
                 }
             }
         }
-           
+
+
+        public static void BulkMergeUtil<T>(List<T> list){
+            using(IDbConnection db = DBConnectionHelper.getConnection(dbConfig)){
+                db.BulkMerge(list);
+            }
+        }
+
         /*
         This method simply merges whatever data is passed to it into DB
         */

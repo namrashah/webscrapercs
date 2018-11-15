@@ -15,9 +15,11 @@ namespace WebScraperModularized.data{
 
         public double distance {get; set;}//distance in miles
 
-        public string category {get; set;}
+        public int category {get; set;}
 
         public int property {get; set;}
+
+        public List<PropertyNTPIMapping> PropNTPIMapping;
 
     }
 }

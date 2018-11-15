@@ -123,14 +123,16 @@ namespace WebScraperModularized.parsers{
                     if(specList!=null){
                         foreach(HtmlNode liNode in specList){
                             Amenity amenity = new Amenity();
-
+                            amenity.PropAmenityMapping = new List<PropertyAmenityMapping>();
+                            PropertyAmenityMapping mapObject = new PropertyAmenityMapping();
                             //get title
                             if(liNode.ChildNodes.Count>1) amenity.title = liNode.ChildNodes[1].InnerHtml.Trim();
                             else amenity.title = liNode.InnerText.Trim();
 
                             //set property
                             amenity.property = myUrl.property;
-
+                            mapObject.Property = amenity.property;
+                            amenity.PropAmenityMapping.Add(mapObject);
                             amenities.Add(amenity);
                         }
                     }
@@ -250,8 +252,10 @@ namespace WebScraperModularized.parsers{
                 if(schoolCollection!=null){
                     foreach(HtmlNode schoolNode in schoolCollection){
                         School school = new School();
+                        school.PropSchoolMapping = new List<PropertySchoolMapping>();
                         school.property = myUrl.property;
-
+                        PropertySchoolMapping propSchoolMap = new PropertySchoolMapping();
+                        propSchoolMap.Property = school.property;
                         IEnumerable<HtmlNode> ancestorCollection = schoolNode.Ancestors("div");
                         foreach(HtmlNode ancestor in ancestorCollection){
                             string ancestorClass = ancestor.GetAttributeValue("class", "");
@@ -292,7 +296,7 @@ namespace WebScraperModularized.parsers{
                                 school.rating = Util.parseInt(ratingclass, 0);
                             }
                         }
-
+                        school.PropSchoolMapping.Add(propSchoolMap);
                         schools.Add(school);
                     }
                 }
@@ -300,21 +304,25 @@ namespace WebScraperModularized.parsers{
             return schools;
         }
 
-        private List<NTPI> getNTPI(HtmlNode row){
-            List<NTPI> nTPIs = new List<NTPI>();
+        private List<NTPICategory> getNTPI(HtmlNode row){
+            List<NTPICategory> ntpiCategoryList = new List<NTPICategory>();
             if(row!=null){
                 HtmlNodeCollection transportNodes = row.SelectNodes(".//div[contains(@class, \"transportationDetail\")]");
                 if(transportNodes!=null){
                     foreach(HtmlNode transportNode in transportNodes){
+                        List<NTPI> ntpiList = new List<NTPI>();
                         string transportCategory = "";
-
+                        NTPICategory ntpiCategory = new NTPICategory();
                         HtmlNode categoryNode = transportNode.SelectSingleNode(".//thead/tr/th[1]");
                         if(categoryNode!=null) transportCategory = categoryNode.ChildNodes[1].InnerHtml.Trim();
+                        ntpiCategory.Name = transportCategory;
                         foreach(HtmlNode trNode in transportNode.SelectNodes(".//tbody/tr")){
                             NTPI ntpi = new NTPI();
+                            ntpi.PropertyNTPIMapping = new List<PropertyNTPIMapping>();
                             ntpi.property = myUrl.property;
-                            
-                            ntpi.category = transportCategory;
+                            PropertyNTPIMapping propNTPIMap = new PropertyNTPIMapping();
+                            propSchoolMap.Property = ntpi.property;
+                            //ntpi.category = transportCategory;
                             
                             HtmlNode tdDrive = trNode.SelectSingleNode(".//td[2]");
                             if(tdDrive!=null) ntpi.drivetime = Util.parseDouble(tdDrive.InnerHtml.Trim().Split(" ")[0], 0);
@@ -329,8 +337,10 @@ namespace WebScraperModularized.parsers{
                                 else ntpi.name = transportationNameNode.InnerHtml.Trim();
                             }
 
-                            nTPIs.Add(ntpi);
+                            ntpi.PropertyNTPIMapping.Add(propNTPIMap);
+                            ntpiList.Add(ntpi);
                         }
+                        ntpiCategoryList.Add(ntpiList);
                     }
                 }
             }

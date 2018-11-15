@@ -29,6 +29,8 @@ namespace WebScraperModularized.data{
         public int property {get; set;}
 
         public int schooltype;
+
+        public List<PropertySchoolMapping> PropSchoolMapping;
         
     }
 }

@@ -10,6 +10,6 @@ namespace WebScraperModularized.data
 
         public int Property { get; set; }
 
-        public int School { get; set; }
+        public int SchoolId { get; set; }
     }
 }
